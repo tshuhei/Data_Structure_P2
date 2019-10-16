@@ -21,28 +21,36 @@ int main(int argc, char** argv) {
   arraySize = jsonInput["metadata"]["arraySize"];
   numSamples = jsonInput["metadata"]["numSamples"];
 
-  for(auto itr = jsonInput.begin(); itr != jsonInput.end(); ++itr){
+  for(auto itr = jsonInput.begin(); ++itr != jsonInput.end(); ++itr){
+    --itr;
     string key = itr.key();
     int i =0;
- 
+    
     for(auto arrayItr = jsonInput[key].begin(); arrayItr != jsonInput[key].end();++arrayItr){
-             try{
-      if(arrayItr + 1 == jsonInput[key].end()){
-	break;
+      auto arraynext = ++arrayItr;
+      arrayItr--;
+      try{
+	if(arraynext  == jsonInput[key].end()){
+	  break;
+	}
+      }catch(json::invalid_iterator& e){
+	cout <<"error1" << "\n";
+	cout << __PRETTY_FUNCTION__ << ":" << __LINE__ << ":" << e.what() << "\n";
+	cout << "i = " << i << "\n";
       }
-
-	     if(*arrayItr > *(arrayItr + 1)){
-	isInversions = true;
-	jsonOutput[key]["ConsecutiveInversions"][to_string(i)] = {*arrayItr, *(arrayItr+1)};
+      try{
+	if(*arrayItr > *(arraynext)){
+	  isInversions = true;
+	  jsonOutput[key]["ConsecutiveInversions"][to_string(i)] = {*arrayItr, *arraynext};
+	}
+      }catch(json::invalid_iterator& e){
+	cout <<"error2" << "\n";
+	cout << __PRETTY_FUNCTION__ << ":" << __LINE__ << ":" << e.what() << "\n";
+	cout << "i = " << i << "\n";
       }
-      i++;
-                }catch(json::invalid_iterator& e){
-      cout <<"chinchin" << "\n";
-      cout << __PRETTY_FUNCTION__ << ":" << __LINE__ << ":" << e.what() << "\n";
-      cout << "i = " << i << "\n";
+      i++;     
     }
-    }
-
+    
     if(isInversions){
       jsonOutput[key]["sample"] = itr.value();
       sampleWithInversions++;
