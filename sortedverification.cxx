@@ -1,0 +1,60 @@
+#include <iostream>
+#include <fstream>
+#include <string>
+#include "json.hpp"
+
+using namespace std;
+using namespace nlohmann;
+int main(int argc, char** argv) {
+  ifstream file;
+  json jsonOutput;
+  json jsonInput;
+  int arraySize = 0;
+  int numSamples = 0;
+  int sampleWithInversions = 0;
+  bool isInversions = false;
+
+  file.open(argv[1]);
+  if(file.is_open()){
+    file >> jsonInput;
+  }
+  arraySize = jsonInput["metadata"]["arraySize"];
+  numSamples = jsonInput["metadata"]["numSamples"];
+
+  for(auto itr = jsonInput.begin(); itr != jsonInput.end(); ++itr){
+    string key = itr.key();
+    int i =0;
+ 
+    for(auto arrayItr = jsonInput[key].begin(); arrayItr != jsonInput[key].end();++arrayItr){
+             try{
+      if(arrayItr + 1 == jsonInput[key].end()){
+	break;
+      }
+
+	     if(*arrayItr > *(arrayItr + 1)){
+	isInversions = true;
+	jsonOutput[key]["ConsecutiveInversions"][to_string(i)] = {*arrayItr, *(arrayItr+1)};
+      }
+      i++;
+                }catch(json::invalid_iterator& e){
+      cout <<"chinchin" << "\n";
+      cout << __PRETTY_FUNCTION__ << ":" << __LINE__ << ":" << e.what() << "\n";
+      cout << "i = " << i << "\n";
+    }
+    }
+
+    if(isInversions){
+      jsonOutput[key]["sample"] = itr.value();
+      sampleWithInversions++;
+      isInversions = false;
+    }
+
+  }
+
+  jsonOutput["metadata"]["arraysize"] = arraySize;
+  jsonOutput["metadata"]["file"] = argv[1];
+  jsonOutput["metadata"]["numSamples"] = numSamples;
+  jsonOutput["metadata"]["samplesWithInversions"] = sampleWithInversions;
+  
+  cout << jsonOutput.dump(2) << "\n";
+}
